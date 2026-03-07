@@ -1,26 +1,114 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Github Issue Tracker</title>
-  <!-- ===== tailwind & daisy ui ===== -->
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-<!-- ===== Inter Google font ==== -->
- <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Outfit:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
-<!-- ===== font awesome ==== -->
- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
- <!-- ====== internal css ==== -->
-  <style>
-    *{
-        font-family: "Inter", sans-serif;
-    }
-  </style>
-</head>
-<body>
-  
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Github Issue Tracker</title>
+    <!-- ===== tailwind & daisy ui ===== -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@5"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- ===== Inter Google font ==== -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Outfit:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <!-- ===== font awesome ==== -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+      integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <!-- ====== internal css ==== -->
+    <style>
+      * {
+        font-family: 'Inter', sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="w-[520px] mx-auto pt-20">
+      <div class="bg-base-100 w-full max-w-sm shadow-2xl p-8 mx-auto">
+        <div
+          class="flex flex-col justify-center items-center text-[#1F2937] mb-6"
+        >
+          <img
+            src="assets/github-logo.png"
+            alt="github-logo"
+            class="mb-6 w-[100px]"
+          />
+          <h2 class="text-2xl font-bold mb-2">Github Issues Tracker</h2>
+          <p class="text-lg text-[#64748B]">Sign into manage your issues</p>
+        </div>
+        <div class="w-full">
+          <form class="fieldset w-full text-[16px]" action="">
+            <div class="example">
+              <label class="label text-[#1F2937] font-semibold mb-2"
+              >Username</label
+            >
+            <input
+              id="username"
+              type="text"
+              class="input w-full text-[#64748B] rounded-lg"
+              placeholder="Enter Username"
+              required
+            />
+            </div>
+            <p class="text-[#4A00FF] mb-4">Default: admin</p>
+
+            <div class="example">
+              <label class="label text-[#1F2937] font-semibold mb-2"
+              >Password</label
+            >
+            <input
+            
+              id="password"
+              type="password"
+              class="input w-full text-[#64748B] rounded-lg"
+              placeholder="Password"
+              required
+            />
+            </div>
+            <p class="text-[#4A00FF] mb-4">Default: admin123</p>
+
+            <!-- Error message -->
+            <p id="error-msg" class="text-red-500 text-sm hidden">
+              Invalid username or password!
+            </p>
+
+            <div class="example">
+              <button
+              type="submit"
+              id="login-btn"
+              class="btn btn-primary mt-4 w-full rounded-lg"
+            >
+              Login
+            </button>
+            </div>
+          </form>
+        </div>
+        <div class="flex flex-row items-center gap-2 py-5">
+          <div class="w-full border-t-1 border-t-[#1F2937]"></div>
+          <p class="text-[#1F2937] text-[16px]">OR</p>
+          <div class="w-full border-t-1 border-t-[#1F2937]"></div>
+        </div>
+        <div>
+          <h2 class="text-center text-sm text-[#64748B] mb-2">Demo Credentials: </h2>
+          <div class="bg-[#F8FAFC] w-full rounded-lg py-6 text-center">
+            <h2 class="text-lg text-[#1F2937]"><span class="font-bold">Username:</span>admin</h2>
+            <h2 class="text-lg text-[#1F2937]"><span class="font-bold">Password:</span>admin123</h2>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script src="script.js"></script>
+  </body>
 </html>
