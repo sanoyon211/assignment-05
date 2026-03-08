@@ -3,37 +3,169 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Github Issue Tracker</title>
-    <!-- ===== tailwind & daisy ui ===== -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/daisyui@5"
-      rel="stylesheet"
-      type="text/css"
-    />
+    <title>GitHub Issues Tracker</title>
+
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- ===== Inter Google font ==== -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Outfit:wght@100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-      rel="stylesheet"
-    />
-    <!-- ===== font awesome ==== -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
-      integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    />
-    <!-- ====== internal css ==== -->
-    <style>
-      * {
-        font-family: 'Inter', sans-serif;
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <style type="text/tailwindcss">
+      * { font-family: 'Inter', sans-serif; }
+
+      /* spinner — script.js এ showLoading() / hideLoading() দিয়ে control হয় */
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .spinner { animation: spin 0.8s linear infinite; }
+
+      /* card fadeIn — script.js এ createIssueCard() এ style.animation দিয়ে set হয় */
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: translateY(0); }
       }
+
+      /* modal animation — id="modal-box" এ apply হয় */
+      @keyframes modalIn {
+        from { opacity: 0; transform: scale(0.92); }
+        to   { opacity: 1; transform: scale(1); }
+      }
+      .modal-animate { animation: modalIn 0.2s ease forwards; }
     </style>
   </head>
-  <body>
-    homee
+
+  <body class="bg-gray-100 min-h-screen">
+
+    <!--
+      id="spinner"
+      script.js → showLoading() এ display:'flex' হয়
+      script.js → hideLoading() এ display:'none' হয়
+    -->
+    <div id="spinner" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-3" style="display:none;">
+      <div class="w-12 h-12 rounded-full border-4 border-gray-200 border-t-indigo-600 spinner"></div>
+      <p class="text-sm text-gray-500 font-medium">Loading issues...</p>
+    </div>
+
+    <!--
+      NAVBAR
+      id="search-input" → script.js এ searchInput variable এ নেওয়া হয়েছে
+      search input event → local filter চলে, কোনো API call নেই
+    -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+      <div class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
+
+        <!-- Logo + Site name -->
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="w-9 h-9 bg-gray-900 rounded-full flex items-center justify-center">
+            <svg viewBox="0 0 24 24" class="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+            </svg>
+          </div>
+          <span class="text-lg font-bold text-gray-900 hidden sm:block">GitHub Issues Tracker</span>
+        </div>
+
+        <!-- Search + New Issue button -->
+        <div class="flex items-center gap-3 flex-1 justify-end max-w-lg">
+          <!--
+            id="search-input"
+            script.js → searchInput variable
+            addEventListener('input') → getFiltered() + .filter() দিয়ে local search
+          -->
+          <input
+            id="search-input"
+            type="text"
+            placeholder="Search issues..."
+            class="flex-1 min-w-0 border border-gray-200 bg-gray-50 rounded-lg px-4 py-2 text-sm text-gray-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all"
+          />
+          <button class="shrink-0 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all shadow-sm cursor-pointer whitespace-nowrap">
+            + New Issue
+          </button>
+        </div>
+
+      </div>
+    </nav>
+
+    <main class="max-w-7xl bg-white border-b border-gray-200 mx-auto px-6 py-8">
+
+      <!-- Stats bar -->
+      <div class="bg-white border border-gray-200 rounded-xl px-5 py-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+          </div>
+          <div>
+            <!--
+              id="issue-count"
+              script.js → issueCount variable
+              renderIssues() এ issueCount.textContent দিয়ে update হয়
+            -->
+            <p id="issue-count" class="text-xl font-bold text-gray-900">0 Issues</p>
+            <p class="text-xs text-gray-500">Track and manage your project issues</p>
+          </div>
+        </div>
+
+        <!-- Open/Closed color legend -->
+        <div class="flex items-center gap-5 text-sm font-medium">
+          <span class="flex items-center gap-1.5 text-green-600">
+            <span class="w-2.5 h-2.5 bg-green-500 rounded-full"></span> Open
+          </span>
+          <span class="flex items-center gap-1.5 text-purple-600">
+            <span class="w-2.5 h-2.5 bg-purple-500 rounded-full"></span> Closed
+          </span>
+        </div>
+      </div>
+
+      <!--
+        TAB BUTTONS
+        class="tab-btn" → script.js এ tabBtns = querySelectorAll('.tab-btn')
+        data-tab="..." → script.js এ setActiveTab() এ btn.dataset.tab দিয়ে check হয়
+        onclick="switchTab(...)" → script.js এ switchTab() function call হয়
+          → currentTab update হয়
+          → setActiveTab() দিয়ে active button highlight হয়
+          → getFiltered() + renderIssues() চলে
+      -->
+      <div class="flex items-center gap-2 mb-6">
+        <button data-tab="all"    onclick="switchTab('all')"    class="tab-btn px-5 py-2 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white shadow-md shadow-indigo-200 cursor-pointer">All</button>
+        <button data-tab="open"   onclick="switchTab('open')"   class="tab-btn px-5 py-2 rounded-lg text-sm font-semibold transition-all text-gray-500 hover:bg-gray-200 cursor-pointer">Open</button>
+        <button data-tab="closed" onclick="switchTab('closed')" class="tab-btn px-5 py-2 rounded-lg text-sm font-semibold transition-all text-gray-500 hover:bg-gray-200 cursor-pointer">Closed</button>
+      </div>
+
+      <!--
+        id="issues-grid"
+        script.js → issuesGrid variable
+        renderIssues() এ issuesGrid.innerHTML = '' দিয়ে clear হয়
+        তারপর createIssueCard() থেকে আসা প্রতিটা card এখানে appendChild হয়
+        grid-cols-4 → desktop এ 4 column, tablet এ 2, mobile এ 1
+      -->
+      <div id="issues-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- script.js → createIssueCard() → issuesGrid.appendChild(card) -->
+      </div>
+
+    </main>
+
+    <!--
+      id="modal-overlay"
+      script.js → modalOverlay variable
+      openIssueModal() এ classList.remove('hidden') → দেখা যায়
+      closeModal() এ classList.add('hidden') → লুকিয়ে যায়
+      overlay তে click করলে বা Escape চাপলেও closeModal() চলে
+    -->
+    <div id="modal-overlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+
+      <!--
+        id="modal-box"
+        script.js → modalBox variable
+        openIssueModal() এ modalBox.innerHTML = `...` দিয়ে issue details inject হয়
+        .modal-animate class → scale animation চলে modal open হওয়ার সময়
+      -->
+      <div id="modal-box" class="modal-animate bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+        <!-- script.js → openIssueModal() → modalBox.innerHTML এ content আসবে -->
+      </div>
+    </div>
+
+    <!-- script.js — সব DOM manipulation, API call, event handling এখানে -->
+    <script src="script.js"></script>
   </body>
 </html>
