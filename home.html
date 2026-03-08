@@ -1,35 +1,25 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GitHub Issues Tracker</title>
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- DaisyUI + Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
-    <style type="text/tailwindcss">
+    <style>
       * { font-family: 'Inter', sans-serif; }
 
-      /* spinner — script.js এ showLoading() / hideLoading() দিয়ে control হয় */
-      @keyframes spin { to { transform: rotate(360deg); } }
-      .spinner { animation: spin 0.8s linear infinite; }
-
-      /* card fadeIn — script.js এ createIssueCard() এ style.animation দিয়ে set হয় */
+      /* card fadeIn — script.js এ style.animation দিয়ে set হয় */
       @keyframes fadeIn {
         from { opacity: 0; transform: translateY(6px); }
         to   { opacity: 1; transform: translateY(0); }
       }
-
-      /* modal animation — id="modal-box" এ apply হয় */
-      @keyframes modalIn {
-        from { opacity: 0; transform: scale(0.92); }
-        to   { opacity: 1; transform: scale(1); }
-      }
-      .modal-animate { animation: modalIn 0.2s ease forwards; }
     </style>
   </head>
 
@@ -39,16 +29,16 @@
       id="spinner"
       script.js → showLoading() এ display:'flex' হয়
       script.js → hideLoading() এ display:'none' হয়
+      DaisyUI loading spinner ব্যবহার করা হয়েছে
     -->
     <div id="spinner" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-3" style="display:none;">
-      <div class="w-12 h-12 rounded-full border-4 border-gray-200 border-t-indigo-600 spinner"></div>
+      <span class="loading loading-spinner loading-lg text-primary"></span>
       <p class="text-sm text-gray-500 font-medium">Loading issues...</p>
     </div>
 
     <!--
       NAVBAR
       id="search-input" → script.js এ searchInput variable এ নেওয়া হয়েছে
-      search input event → local filter চলে, কোনো API call নেই
     -->
     <nav class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
       <div class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
@@ -65,18 +55,13 @@
 
         <!-- Search + New Issue button -->
         <div class="flex items-center gap-3 flex-1 justify-end max-w-lg">
-          <!--
-            id="search-input"
-            script.js → searchInput variable
-            addEventListener('input') → getFiltered() + .filter() দিয়ে local search
-          -->
           <input
             id="search-input"
             type="text"
             placeholder="Search issues..."
-            class="flex-1 min-w-0 border border-gray-200 bg-gray-50 rounded-lg px-4 py-2 text-sm text-gray-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100 transition-all"
+            class="input input-bordered input-sm flex-1 min-w-0 text-sm"
           />
-          <button class="shrink-0 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all shadow-sm cursor-pointer whitespace-nowrap">
+          <button class="btn btn-primary btn-sm shrink-0 whitespace-nowrap">
             + New Issue
           </button>
         </div>
@@ -84,85 +69,67 @@
       </div>
     </nav>
 
-    <main class="max-w-7xl bg-white border-b border-gray-200 mx-auto px-6 py-8">
+    <main class="max-w-7xl mx-auto px-6 py-8">
 
-      <!-- Stats bar -->
-      <div class="bg-white border border-gray-200 rounded-xl px-5 py-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-            </svg>
+      <!-- TAB BUTTONS — white bg container এ উপরে -->
+      <div class="bg-white rounded-xl px-5 py-4 mb-4 flex items-center gap-2 shadow-sm border border-gray-200 ">
+        <button data-tab="all"    onclick="switchTab('all')"    class="tab-btn btn btn-primary btn-sm">All</button>
+        <button data-tab="open"   onclick="switchTab('open')"   class="tab-btn btn btn-ghost btn-sm text-gray-500">Open</button>
+        <button data-tab="closed" onclick="switchTab('closed')" class="tab-btn btn btn-ghost btn-sm text-gray-500">Closed</button>
+      </div>
+
+      <!-- Status bar + Issues grid — একটা white bg container এ নিচে -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+
+        <!-- Stats bar -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 border-b-[1px] border-gray-200 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+              <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+              </svg>
+            </div>
+            <div>
+              <p id="issue-count" class="text-xl font-bold text-gray-900">0 Issues</p>
+              <p class="text-xs text-gray-500">Track and manage your project issues</p>
+            </div>
           </div>
-          <div>
-            <!--
-              id="issue-count"
-              script.js → issueCount variable
-              renderIssues() এ issueCount.textContent দিয়ে update হয়
-            -->
-            <p id="issue-count" class="text-xl font-bold text-gray-900">0 Issues</p>
-            <p class="text-xs text-gray-500">Track and manage your project issues</p>
+
+          <!-- Open/Closed color legend -->
+          <div class="flex items-center gap-5 text-sm font-medium">
+            <span class="flex items-center gap-1.5 text-green-600">
+              <span class="w-2.5 h-2.5 bg-green-500 rounded-full"></span> Open
+            </span>
+            <span class="flex items-center gap-1.5 text-purple-600">
+              <span class="w-2.5 h-2.5 bg-purple-500 rounded-full"></span> Closed
+            </span>
           </div>
         </div>
 
-        <!-- Open/Closed color legend -->
-        <div class="flex items-center gap-5 text-sm font-medium">
-          <span class="flex items-center gap-1.5 text-green-600">
-            <span class="w-2.5 h-2.5 bg-green-500 rounded-full"></span> Open
-          </span>
-          <span class="flex items-center gap-1.5 text-purple-600">
-            <span class="w-2.5 h-2.5 bg-purple-500 rounded-full"></span> Closed
-          </span>
+
+        <!-- Issues grid -->
+        <div id="issues-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <!-- script.js → displayAllIssues() → issuesGrid.appendChild(card) -->
         </div>
-      </div>
 
-      <!--
-        TAB BUTTONS
-        class="tab-btn" → script.js এ tabBtns = querySelectorAll('.tab-btn')
-        data-tab="..." → script.js এ setActiveTab() এ btn.dataset.tab দিয়ে check হয়
-        onclick="switchTab(...)" → script.js এ switchTab() function call হয়
-          → currentTab update হয়
-          → setActiveTab() দিয়ে active button highlight হয়
-          → getFiltered() + renderIssues() চলে
-      -->
-      <div class="flex items-center gap-2 mb-6">
-        <button data-tab="all"    onclick="switchTab('all')"    class="tab-btn px-5 py-2 rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white shadow-md shadow-indigo-200 cursor-pointer">All</button>
-        <button data-tab="open"   onclick="switchTab('open')"   class="tab-btn px-5 py-2 rounded-lg text-sm font-semibold transition-all text-gray-500 hover:bg-gray-200 cursor-pointer">Open</button>
-        <button data-tab="closed" onclick="switchTab('closed')" class="tab-btn px-5 py-2 rounded-lg text-sm font-semibold transition-all text-gray-500 hover:bg-gray-200 cursor-pointer">Closed</button>
-      </div>
-
-      <!--
-        id="issues-grid"
-        script.js → issuesGrid variable
-        renderIssues() এ issuesGrid.innerHTML = '' দিয়ে clear হয়
-        তারপর createIssueCard() থেকে আসা প্রতিটা card এখানে appendChild হয়
-        grid-cols-4 → desktop এ 4 column, tablet এ 2, mobile এ 1
-      -->
-      <div id="issues-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <!-- script.js → createIssueCard() → issuesGrid.appendChild(card) -->
       </div>
 
     </main>
 
     <!--
-      id="modal-overlay"
-      script.js → modalOverlay variable
+      DaisyUI Modal
+      id="modal-overlay" → script.js এ modalOverlay variable
+      id="modal-box"     → script.js এ modalBox variable
       openIssueModal() এ classList.remove('hidden') → দেখা যায়
       closeModal() এ classList.add('hidden') → লুকিয়ে যায়
-      overlay তে click করলে বা Escape চাপলেও closeModal() চলে
     -->
-    <div id="modal-overlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-
-      <!--
-        id="modal-box"
-        script.js → modalBox variable
-        openIssueModal() এ modalBox.innerHTML = `...` দিয়ে issue details inject হয়
-        .modal-animate class → scale animation চলে modal open হওয়ার সময়
-      -->
-      <div id="modal-box" class="modal-animate bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div id="modal-overlay" class="modal hidden">
+      <div class="modal-box w-full max-w-lg max-h-[90vh] overflow-y-auto p-0" id="modal-box">
         <!-- script.js → openIssueModal() → modalBox.innerHTML এ content আসবে -->
       </div>
+      <!-- backdrop click এ modal বন্ধ হবে -->
+      <div class="modal-backdrop" onclick="closeModal()"></div>
     </div>
 
     <!-- script.js — সব DOM manipulation, API call, event handling এখানে -->
