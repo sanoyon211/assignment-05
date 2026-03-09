@@ -52,7 +52,8 @@ async function loadAllIssues() {
     'https://phi-lab-server.vercel.app/api/v1/lab/issues',
   );
   const data = await res.json();
-  allIssues = data.issues;
+  allIssues = data.data;
+
   console.log(allIssues)
   displayAllIssues(getFiltered());
   hideLoading();
@@ -65,7 +66,8 @@ async function searchIssues(query) {
     `https://phi-lab-server.vercel.app/api/v1/lab/issues/search?q=${encodeURIComponent(query)}`,
   );
   const data = await res.json();
-  const results = data.issues;
+  const results = data.data;
+
   console.log(results)
   if (currentTab === 'all') {
     displayAllIssues(results);
@@ -90,7 +92,8 @@ async function loadSingleIssue(id) {
     `https://phi-lab-server.vercel.app/api/v1/lab/issue/${id}`,
   );
   const data = await res.json();
-  const issue = data.issues;
+  const issue = data.data;
+
   renderModal(issue);
   console.log(issue)
 }
@@ -105,10 +108,10 @@ function handleSearch() {
     return;
   }
 
-  // 400ms debounce — user টাইপ করা থামালে তারপর API call
+  // 400ms debounce 
   searchTimeout = setTimeout(() => {
     searchIssues(input);
-  }, 400);
+  }, 600);
 }
 
 // ========== GET FILTERED ==========
@@ -192,11 +195,12 @@ function renderModal(issue) {
     <div class="p-6">
       <div class="flex items-start justify-between gap-4 mb-5">
         <div class="flex-1 min-w-0">
-          <div class="flex flex-wrap items-center gap-2 mb-2">
+          
+          <h2 class="text-lg font-bold text-gray-900 mb-2">${issue.title || 'Untitled Issue'}</h2>
+          <div class="flex flex-wrap items-center gap-2 ">
             <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${statusClass}">${capitalize(status)}</span>
             <span class="text-xs text-gray-400">by <strong class="text-gray-700">${author}</strong> · ${fmtDate(issue.createdAt || issue.created_at)}</span>
           </div>
-          <h2 class="text-lg font-bold text-gray-900">${issue.title || 'Untitled Issue'}</h2>
         </div>
         <button onclick="closeModal()" class="text-gray-400 hover:text-gray-700 cursor-pointer">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,16 +209,16 @@ function renderModal(issue) {
         </button>
       </div>
       ${labels.length ? `<div class="flex flex-wrap gap-1.5 mb-5">${getLabelsHtml(labels)}</div>` : ''}
-      <div class="bg-gray-50 border border-gray-100 rounded-xl p-4 mb-5">
+      <div class=" mb-5">
         <p class="text-sm text-gray-700 leading-relaxed">${issue.body || issue.description || 'No description.'}</p>
       </div>
       <div class="grid grid-cols-2 gap-3 mb-5">
         <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
-          <p class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-1">Assignee</p>
+          <p class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-1">Assignee :</p>
           <p class="text-sm font-bold text-gray-800">${issue.assignee || author}</p>
         </div>
         <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
-          <p class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-1">Priority</p>
+          <p class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-1">Priority :</p>
           <span class="text-xs font-bold px-2.5 py-1 rounded-full ${priorityClass}">${priority}</span>
         </div>
         ${
@@ -226,13 +230,10 @@ function renderModal(issue) {
         </div>`
             : ''
         }
-        <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
-          <p class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-1">Issue</p>
-          <p class="text-sm font-bold text-gray-800">#${issue.id || '?'}</p>
-        </div>
+        
       </div>
       <div class="flex justify-end">
-        <button onclick="closeModal()" class="btn btn-ghost btn-sm">Close</button>
+        <button onclick="closeModal()" class="btn btn-primary btn-md">Close</button>
       </div>
     </div>`;
 
@@ -247,15 +248,6 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
-// modal এর বাইরে click করলে বন্ধ হবে
-modalOverlay.addEventListener('click', function (e) {
-  if (e.target === modalOverlay) closeModal();
-});
-
-// Escape চাপলে modal বন্ধ হবে
-document.addEventListener('keydown', function (e) {
-  if (e.key === 'Escape') closeModal();
-});
 
 // ========== SHOW ERROR ==========
 function showError() {
@@ -270,14 +262,14 @@ function showError() {
 // ========== HELPER FUNCTIONS ==========
 
 function getStatus(issue) {
-  const s = (issue.status || issue.state || '').toLowerCase();
-  return s === 'closed' ? 'closed' : 'open';
+  const status = (issue.status || issue.state || '').toLowerCase();
+  return status === 'closed' ? 'closed' : 'open';
 }
 
 function getPriority(issue) {
-  const p = (issue.priority || '').toLowerCase();
-  if (p === 'high') return 'High';
-  if (p === 'low') return 'Low';
+  const priority = (issue.priority || '').toLowerCase();
+  if (priority === 'high') return 'High';
+  if (priority === 'low') return 'Low';
   return 'Medium';
 }
 
@@ -290,24 +282,22 @@ function getLabels(issue) {
 }
 
 function getLabelsHtml(labels) {
+  const labelColorMap = {
+    bug: 'bg-red-50 text-red-500 border border-red-200',
+    'help wanted': 'bg-yellow-50 text-yellow-600 border border-yellow-200',
+    enhancement: 'bg-green-50 text-green-600 border border-green-200',
+    documentation: 'bg-blue-50 text-blue-600 border border-blue-200',
+  };
   return labels
-    .map(
-      l =>
-        `<span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">${l}</span>`,
-    )
+    .map(label => {
+      const labelClass =
+        labelColorMap[label.toLowerCase()] ||
+        'bg-gray-100 text-gray-500 border border-gray-200';
+      return `<span class="text-[11px] font-semibold px-2.5 py-1 rounded-full ${labelClass}">${label}</span>`;
+    })
     .join('');
 }
 
-function getStatusIcon(status) {
-  if (status === 'open') {
-    return `<span style="width:28px;height:28px;border-radius:50%;border:2px dashed #22c55e;display:flex;align-items:center;justify-content:center;">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><circle cx="12" cy="12" r="4"/></svg>
-    </span>`;
-  }
-  return `<span style="width:28px;height:28px;border-radius:50%;background:#f3e8ff;display:flex;align-items:center;justify-content:center;">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-  </span>`;
-}
 
 function getStatusClass(status) {
   return status === 'open'
@@ -334,9 +324,9 @@ function fmtDate(str) {
   });
 }
 
-function capitalize(s) {
-  if (!s) return '';
-  return s[0].toUpperCase() + s.slice(1);
+function capitalize(word) {
+  if (!word) return '';
+  return word[0].toUpperCase() + word.slice(1);
 }
 
 // ========== INIT ==========
